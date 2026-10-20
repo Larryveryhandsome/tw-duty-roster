@@ -12,11 +12,15 @@
     <div class="actions no-print">
       <button id="btnGenerate" class="primary">產生排班</button>
       <button id="btnCSV">匯出 Excel（CSV）</button>
+      <button id="btnBackup">備份（JSON）</button>
+      <label class="button-like">還原備份<input type="file" id="fileRestore" accept=".json,application/json" hidden></label>
       <button id="btnPrint">列印／存 PDF</button>
     </div>
   </header>
 
   <main>
+    <p class="no-print" style="margin:0 0 12px;padding:8px 12px;background:#fff7e6;border:1px solid #f1d39a;border-radius:8px;font-size:.9em;color:#6b4d12">資料只存在<b>這台裝置的這個瀏覽器</b>：換手機、清除瀏覽器資料、無痕模式都可能消失，也無法多人共用。請定期按上方<b>「備份（JSON）」</b>存成檔案；要給同事看請用「列印／存 PDF」或匯出 CSV。</p>
+    <p id="saveWarn" class="no-print" role="alert" hidden style="margin:0 0 12px;padding:8px 12px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b"><b>儲存失敗：</b>瀏覽器不允許寫入（無痕模式或空間已滿），剛才的變更沒有存下來！請立刻按「備份（JSON）」。</p>
     <section class="card no-print">
       <h2>1. 期間與範本</h2>
       <div class="row">

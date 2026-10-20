@@ -11,8 +11,8 @@
 
   // ---------- 狀態 ----------
   function thisMonth() {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1); // 預設排下個月
+    const n = new Date();
+    const d = new Date(n.getFullYear(), n.getMonth() + 1, 1); // 預設排下個月（從 1 號算，1/31 時不會跳到 3 月）
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
   function fromPreset(id, base) {
@@ -27,19 +27,48 @@
       end: s.end || m.end,
       leaves: [],
       plan: null,
+      plans: s.plans || {},
       note: s.note || '',
     };
   }
   function load() {
+    let raw = null;
     try {
-      const s = JSON.parse(localStorage.getItem(KEY));
-      if (s && Array.isArray(s.staff)) { s.rules = R.normRules(s.rules); return s; }
-    } catch (e) { /* 沒存過或無法讀取，就用範本 */ }
+      raw = localStorage.getItem(KEY);
+      if (raw) return R.validateState(JSON.parse(raw));
+    } catch (e) {
+      // 讀不懂就用範本，但先把原本的資料另存一份，避免下次存檔把它蓋掉而救不回來
+      try { if (raw) localStorage.setItem(KEY + ':corrupt-backup', raw); } catch (e2) { /* 空間不足就算了 */ }
+    }
     return fromPreset(CFG.defaultPreset || Object.keys(CFG.presets)[0]);
   }
   let state = load();
+  let saveFailed = false;
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* 無痕模式等情況，不存也能用 */ }
+    try { localStorage.setItem(KEY, JSON.stringify(state)); saveFailed = false; }
+    catch (e) { saveFailed = true; }   // 無痕模式、空間滿了：不能靜悄悄，畫面上會出現紅字提醒
+    const w = document.getElementById('saveWarn');
+    if (w) w.hidden = !saveFailed;
+  }
+  // 別的分頁改了資料 → 這頁重新讀入，避免兩個分頁互相用舊資料覆蓋
+  window.addEventListener('storage', e => {
+    if (e.key !== KEY || e.newValue == null) return;
+    try { state = R.validateState(JSON.parse(e.newValue)); renderSettings(); renderGrid(); } catch (err) { /* 壞資料就忽略 */ }
+  });
+  // 其他期間已排好的班（例如上個月），給排班與檢查參考：跨月的連續值班、每週上限才算得準
+  function historyMap() {
+    const h = {};
+    Object.keys(state.plans || {}).forEach(k => {
+      if (k === state.start + '~' + state.end) return;
+      Object.assign(h, state.plans[k]);
+    });
+    return h;
+  }
+  function archiveCurrent() {
+    if (!state.plan) return;
+    state.plans = state.plans || {};
+    state.plans[state.start + '~' + state.end] = state.plan;
+    Object.keys(state.plans).sort().slice(0, Math.max(0, Object.keys(state.plans).length - 24)).forEach(k => delete state.plans[k]);
   }
 
   // ---------- 小元件 ----------
@@ -169,7 +198,7 @@
     return state.leaves.filter(l => l.staffId && /^\d{4}-\d{2}-\d{2}$/.test(l.from) && /^\d{4}-\d{2}-\d{2}$/.test(l.to) && l.from <= l.to);
   }
   function input() {
-    return { start: state.start, end: state.end, staff: state.staff, rules: state.rules, leaves: validLeaves(), plan: state.plan || {} };
+    return { start: state.start, end: state.end, staff: state.staff, rules: state.rules, leaves: validLeaves(), plan: state.plan || {}, history: historyMap() };
   }
 
   function renderGrid() {
@@ -231,9 +260,10 @@
     renderGrid();
   }
   function setRange(start, end) {
+    archiveCurrent();                       // 換期間前先把這期班表收進歷史，不會因為切換月份就不見
     state.start = start;
     state.end = end;
-    state.plan = null; // 期間換了，舊班表作廢
+    state.plan = (state.plans && state.plans[start + '~' + end]) || null;   // 這個期間以前排過就直接還原
     save();
     renderSettings();
     renderGrid();
@@ -242,7 +272,7 @@
   $('start').addEventListener('change', e => { if (e.target.value) setRange(e.target.value, e.target.value > state.end ? e.target.value : state.end); });
   $('end').addEventListener('change', e => { if (e.target.value) setRange(state.start, e.target.value); });
 
-  $('slots').addEventListener('change', e => { state.rules.slotsPerDay = Math.max(1, +e.target.value || 1); changed(false); });
+  $('slots').addEventListener('change', e => { state.rules.slotsPerDay = Math.min(50, Math.max(1, Math.floor(+e.target.value) || 1)); e.target.value = state.rules.slotsPerDay; changed(false); });
   $('weekStart').addEventListener('change', e => { state.rules.weekStartsOn = +e.target.value; changed(false); });
   $('avoidConsecutive').addEventListener('change', e => { state.rules.avoidConsecutive = e.target.checked; changed(false); });
   $('relax').addEventListener('change', e => { state.rules.relaxWhenShort = e.target.checked; changed(false); });
@@ -264,13 +294,16 @@
   $('btnPresetNo').addEventListener('click', () => { $('presetConfirm').hidden = true; });
   $('btnPresetYes').addEventListener('click', () => {
     $('presetConfirm').hidden = true;
-    state = fromPreset($('preset').value, { start: state.start, end: state.end, note: state.note });
+    archiveCurrent();
+    state = fromPreset($('preset').value, { start: state.start, end: state.end, note: state.note, plans: state.plans });
     save();
     renderSettings();
     renderGrid();
   });
 
   $('btnGenerate').addEventListener('click', () => {
+    const hasPlan = state.plan && Object.values(state.plan).some(ids => ids.length);
+    if (hasPlan && !window.confirm('這個期間已經有排好的班表（含你手動調整的）。重新產生會全部覆蓋，確定嗎？\n（建議先按「備份」存成檔案）')) return;
     try {
       state.plan = R.generate(input()).plan;
     } catch (e) {
@@ -291,6 +324,37 @@
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   });
   $('btnPrint').addEventListener('click', () => window.print());
+
+  // 備份／還原（換手機、換電腦、傳給同事都靠這個；資料只存在瀏覽器裡）
+  $('btnBackup').addEventListener('click', () => {
+    archiveCurrent();
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `值班表備份_${stamp}.json`;
+    document.body.append(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+  $('fileRestore').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const s = R.validateState(JSON.parse(String(fr.result)));
+        if (!window.confirm(`備份檔有 ${s.staff.length} 位人員、期間 ${s.start} ～ ${s.end}。要取代目前的全部資料嗎？`)) return;
+        state = s;
+        save();
+        renderSettings();
+        renderGrid();
+      } catch (err) { alert('還原失敗：' + err.message); }
+    };
+    fr.readAsText(f, 'utf-8');
+    e.target.value = '';
+  });
 
   renderSettings();
   renderGrid();
