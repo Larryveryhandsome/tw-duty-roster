@@ -1,0 +1,10 @@
+{
+  "name": "tw-duty-roster",
+  "version": "1.0.0",
+  "description": "台灣小店／房仲門市用的自動值班排班表（純網頁，免安裝）",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\""
+  }
+}

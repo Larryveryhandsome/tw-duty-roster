@@ -1,0 +1,93 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #fff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --line: #d1d5db;
+  --primary: #2563eb;
+  --duty: #dcfce7;
+  --leave: #fee2e2;
+  --warn: #b45309;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111827;
+    --card: #1f2937;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --line: #374151;
+    --duty: #14532d;
+    --leave: #7f1d1d;
+    --warn: #fbbf24;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  font-size: 15px;
+}
+.top {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  padding: 16px; background: var(--card); border-bottom: 1px solid var(--line);
+}
+.top h1 { margin: 0; font-size: 1.4rem; }
+main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
+.card h2 { margin: 0 0 10px; font-size: 1.1rem; }
+.row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 6px 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); cursor: pointer;
+}
+button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+button.danger { background: #dc2626; border-color: #dc2626; color: #fff; }
+button.small { padding: 2px 8px; }
+input, select, textarea { font: inherit; color: inherit; background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+input.num { width: 4.5em; }
+input.name { width: 7em; }
+textarea { width: 100%; }
+.days { display: inline-flex; gap: 2px; flex-wrap: wrap; }
+.days label { display: inline-flex; align-items: center; gap: 1px; font-size: .9em; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; }
+table.edit td, table.edit th { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.confirm { display: inline-flex; gap: 6px; align-items: center; color: var(--warn); }
+.leave-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+.hint { color: var(--muted); margin: 0 0 8px; font-size: .9em; }
+
+table.grid { font-size: 13px; }
+table.grid th, table.grid td { border: 1px solid var(--line); padding: 3px 4px; text-align: center; min-width: 2.2em; }
+table.grid th.name, table.grid td.name { text-align: left; white-space: nowrap; position: sticky; left: 0; background: var(--card); }
+table.grid td.cell { cursor: pointer; }
+table.grid td.duty { background: var(--duty); font-weight: bold; }
+table.grid td.leave { background: var(--leave); }
+table.grid td.off, table.grid th.off { color: var(--muted); }
+table.grid .sun { color: #dc2626; }
+table.grid .sat { color: #16a34a; }
+table.grid tr.daily td { font-size: 12px; white-space: nowrap; }
+.dot { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.warnings { color: var(--warn); padding-left: 1.2em; }
+.warnings li.ok { color: #16a34a; list-style: none; margin-left: -1.2em; }
+footer { text-align: center; color: var(--muted); padding: 20px; }
+.print-only { display: none; }
+
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body { background: #fff; color: #000; font-size: 12px; }
+  .no-print, .hint { display: none !important; }
+  .print-only { display: block; white-space: pre-wrap; font-size: 16px; }
+  .card { border: none; padding: 0; }
+  .top { border: none; padding: 0 0 6px; }
+  main { padding: 0; max-width: none; }
+  table.grid { width: 100%; }
+  table.grid th, table.grid td { border-color: #888; }
+  table.grid td.duty { background: #dcfce7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table.grid td.leave { background: #fee2e2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
