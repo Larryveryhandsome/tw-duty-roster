@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>值班表</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1 id="title">值班表</h1>
+    <div class="actions no-print">
+      <button id="btnGenerate" class="primary">產生排班</button>
+      <button id="btnCSV">匯出 Excel（CSV）</button>
+      <button id="btnBackup">備份（JSON）</button>
+      <label class="button-like">還原備份<input type="file" id="fileRestore" accept=".json,application/json" hidden></label>
+      <button id="btnPrint">列印／存 PDF</button>
+    </div>
+  </header>
+
+  <main>
+    <p class="no-print" style="margin:0 0 12px;padding:8px 12px;background:#fff7e6;border:1px solid #f1d39a;border-radius:8px;font-size:.9em;color:#6b4d12">資料只存在<b>這台裝置的這個瀏覽器</b>：換手機、清除瀏覽器資料、無痕模式都可能消失，也無法多人共用。請定期按上方<b>「備份（JSON）」</b>存成檔案；要給同事看請用「列印／存 PDF」或匯出 CSV。</p>
+    <p id="saveWarn" class="no-print" role="alert" hidden style="margin:0 0 12px;padding:8px 12px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b"><b>儲存失敗：</b>瀏覽器不允許寫入（無痕模式或空間已滿），剛才的變更沒有存下來！請立刻按「備份（JSON）」。</p>
+    <section class="card no-print">
+      <h2>1. 期間與範本</h2>
+      <div class="row">
+        <label>月份 <input type="month" id="month"></label>
+        <label>或自訂 起 <input type="date" id="start"></label>
+        <label>迄 <input type="date" id="end"></label>
+      </div>
+      <div class="row">
+        <label>範本 <select id="preset"></select></label>
+        <button id="btnPreset">套用範本（會換掉人員與規則）</button>
+        <span id="presetConfirm" class="confirm" hidden>
+          確定要換掉目前的人員與規則？
+          <button id="btnPresetYes" class="danger">確定</button>
+          <button id="btnPresetNo">取消</button>
+        </span>
+      </div>
+    </section>
+
+    <section class="card no-print">
+      <h2>2. 人員</h2>
+      <div class="scroll">
+        <table class="edit" id="staffTable">
+          <thead>
+            <tr><th>名稱</th><th>顏色</th><th>可值班的星期</th><th>固定值班的星期</th><th>每週上限</th><th title="人手不足時也不能超過上限">嚴格</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button id="btnAddStaff">＋ 新增人員</button>
+    </section>
+
+    <section class="card no-print">
+      <h2>3. 規則</h2>
+      <div class="row">
+        <span>需要值班的星期</span><span id="dutyDays" class="days"></span>
+      </div>
+      <div class="row">
+        <label>每天幾人 <input type="number" id="slots" min="1" max="10" class="num"></label>
+        <label>每週從 <select id="weekStart"><option value="1">週一</option><option value="0">週日</option></select> 開始算</label>
+        <label><input type="checkbox" id="avoidConsecutive"> 盡量不要連續兩天值班</label>
+        <label><input type="checkbox" id="relax"> 排不出人時放寬每週上限（嚴格的人除外）</label>
+      </div>
+    </section>
+
+    <section class="card no-print">
+      <h2>4. 請假</h2>
+      <div id="leaves"></div>
+      <button id="btnAddLeave">＋ 新增請假</button>
+    </section>
+
+    <section class="card">
+      <h2 id="tableTitle">排班表</h2>
+      <p class="hint no-print">點格子可以手動加上或拿掉值班，改完下面會自動檢查。</p>
+      <div class="scroll">
+        <table id="grid" class="grid"></table>
+      </div>
+      <ul id="warnings" class="warnings"></ul>
+      <div class="note">
+        <h3 id="noteLabel">店長的話</h3>
+        <textarea id="note" rows="3" class="no-print"></textarea>
+        <div id="notePrint" class="print-only"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="no-print">
+    <small>tw-duty-roster · Apache-2.0 · 資料只存在這台電腦的瀏覽器</small>
+  <p class="custom-ad">需要改成你們公司的版本、幫忙安裝或串接？加 LINE 官方帳號 <a href="https://line.me/R/ti/p/@812ibtir" target="_blank" rel="noopener">@812ibtir</a>（留白事務所・林其衞），原則上 1～2 個工作天回覆報價。</p></footer>
+
+  <script src="config.js"></script>
+  <script src="js/scheduler.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

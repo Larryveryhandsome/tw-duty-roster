@@ -1,0 +1,5 @@
+node_modules/
+*.csv
+!examples/*.csv
+.DS_Store
+Thumbs.db
